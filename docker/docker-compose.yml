@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  web:
+    build: .
+    image: medicore-app:1.0
+    
+    read_only: true                    # Control 2: read-only FS
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m # writable but not executable
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'                  # Control 3: CPU limit
+          memory: 256M                 # Control 3: Memory limit
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    
+    security_opt:
+      - no-new-privileges:true         # Cannot escalate via setuid
+    cap_drop:
+      - ALL                            # Drop all Linux capabilities
+    
+    networks: [medicore-net]
+    
+    # NEVER put passwords in environment:
+    # environment: DB_PASSWORD=secret  ← anyone with docker inspect reads this
+    # Use secrets instead:
+    secrets: [db_password]
+    
+    ports:
+      - "8080:8080"
+
+  database:
+    image: postgres:15-alpine          # Control 4 (DB): minimal base
+    read_only: true
+    tmpfs:
+      - /var/run/postgresql
+      - /tmp
+    networks: [medicore-net]           # Not exposed to internet
+    secrets: [db_password]
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+networks:
+  medicore-net:
+    driver: bridge
+
+volumes:
+  db_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_pw.txt          # Create this file with your DB password
