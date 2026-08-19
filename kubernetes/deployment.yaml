@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medicore-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: medicore-app
+  template:
+    metadata:
+      labels:
+        app: medicore-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      containers:
+      - name: medicore-app
+        image: medicore-app:1.0
+        imagePullPolicy: Never
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - echo healthy
+          initialDelaySeconds: 10
+          periodSeconds: 10
